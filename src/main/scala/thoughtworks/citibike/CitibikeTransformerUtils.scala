@@ -11,14 +11,7 @@ object CitibikeTransformerUtils {
   final val EarthRadiusInM: Double = 6371e3
   final val MetersPerMile: Double = MetersPerFoot * FeetPerMile
 
-  implicit class StringDataset(val dataSet: Dataset[Row]) {
-
-    def computeDistances(spark: SparkSession) : DataFrame = {
-      dataSet.withColumn("distance", lit(null).cast("double"))
-    }
-  }
-
-  def computeHaversineDistance(startLatitude: Double, startLongitude: Double, endLatitude: Double, endLongitude: Double): Double = {
+  def computeHaversineDistance: (Double, Double, Double, Double) => Double = (startLatitude: Double, startLongitude: Double, endLatitude: Double, endLongitude: Double) => {
     val radiusOfEarth = 3958.8 // miles :(
 
     val startLatitudeInRadians = Math.toRadians(startLatitude)
@@ -35,5 +28,13 @@ object CitibikeTransformerUtils {
     BigDecimal(distance).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
   }
 
+  implicit class StringDataset(val dataSet: Dataset[Row]) {
+
+    def computeDistances(spark: SparkSession) : DataFrame = {
+      import spark.implicits._
+      val haversineDistance = udf(computeHaversineDistance)
+      dataSet.withColumn("distance", haversineDistance($"start_station_latitude", $"start_station_longitude", $"end_station_latitude", $"end_station_longitude"))
+    }
+  }
 }
 
