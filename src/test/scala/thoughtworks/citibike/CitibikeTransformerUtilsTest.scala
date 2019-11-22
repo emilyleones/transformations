@@ -24,7 +24,19 @@ class CitibikeTransformerUtilsTest extends DefaultFeatureSpecWithSpark {
 
       Then("I have a column representing the distance from start to end location")
       result.schema("distance") should be(StructField("distance", DoubleType, nullable = true))
-  }
+    }
+
+    scenario("calculate haversine distance given start and end latitude and longitude") {
+      Given("A dataframe with bike start and end locations")
+      val startLocation = (40.69102925677968, -73.99183362722397)
+      val endLocation = (40.6763947, -73.99869893)
+
+      When("I compute distances")
+      val result = computeHaversineDistance(startLocation._1, startLocation._2, endLocation._1, endLocation._2)
+
+      Then("I have a column representing the distance from start to end location")
+      result should be(1.07)
+    }
   }
 }
 
